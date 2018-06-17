@@ -18,6 +18,7 @@
 #include <QBrush>
 #include <QGradient>
 #include <QThread>
+#include <QCursor>
 #include "scribbleshape.h"
 
 ScribbleArea::ScribbleArea(QWidget *parent)
@@ -45,6 +46,8 @@ ScribbleArea::ScribbleArea(QWidget *parent)
     textEdit = 0;
     selected = false;
 
+    QCursor *myCursor =new QCursor(QPixmap(":/icon/icons8-ball-point-pen-64.png"),-1,-1);
+    this->setCursor(*myCursor);
 
 
 }

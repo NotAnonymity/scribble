@@ -15,22 +15,14 @@
 #include <QDebug>
 #include <QStringList>
 #include <QString>
-#include <QCursor>
 
 
 MainWindow::MainWindow()
 {
-   // scrollArea->setBackgroundRole(QPalette::Dark);
-   // scrollArea->setWidget(scribbleArea);
+
    setWindowTitle("Scribble");
    setWindowIcon(QIcon(":/icon/1.png"));
-   // setWindowOpacity(0.94);
-   // setCentralWidget(scrollArea);
-
     scribbleArea = new ScribbleArea;
-  //  setCentralWidget(scribbleArea);
-
-   // scrollArea->show();
 
     scrollArea = new QScrollArea;
     scrollArea->setBackgroundRole(QPalette::Dark);
@@ -47,9 +39,6 @@ MainWindow::MainWindow()
     setWindowTitle(tr("Scribble"));
     resize(1500, 800);
     statusBar();
-
-    QCursor *myCursor =new QCursor(QPixmap(":/icon/icons8-ball-point-pen-64.png"),-1,-1);
-    this->setCursor(*myCursor);
 
 
 }
