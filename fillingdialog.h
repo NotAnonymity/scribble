@@ -1,6 +1,6 @@
 #ifndef FILLINGDIALOG_H
 #define FILLINGDIALOG_H
-
+#include "scribblearea.h"
 #include <QDialog>
 #include <QBrush>
 namespace Ui {
@@ -13,20 +13,25 @@ class FillingDialog : public QDialog
 
 public:
     explicit FillingDialog(QWidget *parent = 0);
-    void linkWith(QBrush *b, int *t);
     ~FillingDialog();
-
+    void setScribble(ScribbleArea *s);
 private:
     Ui::FillingDialog *ui;
-    int *type;
+    int style;
+    int index;
+    int transparence;
+    int type;
     bool opaque;
-    QBrush *brush;
+    QBrush brush;
+    QColor color;
+    ScribbleArea *scribble;
 
 public slots:
    void fillRect();
+   void setBrushStyle();
     void fillEllispe();
     void trans();
-    void setBrushStyle();
+   void getIndex();
     void setColor();
     void saveSetting();
 

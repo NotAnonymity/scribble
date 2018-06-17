@@ -13,6 +13,7 @@ class TextDialog : public QDialog
 
 public:
     explicit TextDialog(QWidget *parent = 0);
+    void showResults(QString s);
     ~TextDialog();
 
 private:

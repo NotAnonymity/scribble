@@ -9,7 +9,6 @@
 #include <QVector>
 #include <QPen>
 #include "scribbleshape.h"
-//#include "mainwindow.h"
 
 class ScribbleArea : public QWidget
 {
@@ -24,12 +23,17 @@ public:
     ScribbleArea(QWidget *parent = 0);
      enum shape
     {
-        Line = 1,
+        Pen = 1,
         Rect,
         Ellipse,
-        Pen,
-        Move
+        Text,
+        Move,
+        Fill,
+        Eraser
     };
+
+    int filling;
+    QBrush fillbrush;
 
     bool openImage(const QString &fileName);
     bool saveImage(const QString &fileName, const char *fileFormat);
@@ -39,9 +43,10 @@ public:
     void setPenWidth(int newWidth);
     void setPenType(int s);
     void set2bgColor();
+    void setText(QString t);
     void setShape(ScribbleArea::shape s);
     void setMovement();
-    void setFillStyle(int *s, QBrush *brush);
+    void setFillStyle(int s, QBrush brush);
     bool isModified() const { return modified; }
     QColor penColor() const { return myPenColor; }
     QColor getbgColor() const {return bgColor;}
@@ -66,13 +71,16 @@ private:
     bool modified;
     bool scribbling;
     bool selected;
-    int *filling;
+
+
     int moveTime;
     int myPenWidth;
     int myPenType;
+    int textEdit;
     ScribbleArea::shape type;
     QColor bgColor;
     QColor myPenColor;
+    QColor preColor;
     QImage image;
     QImage tempImage;
     QPoint lastPoint;
@@ -80,7 +88,8 @@ private:
     QPainterPath ppath;
     QPoint pre;
     QPoint cur;
-    QBrush *fillbrush;
+    QString text;
+
     State state;
     QVector<State> states;
     QVector<State> moveStates;

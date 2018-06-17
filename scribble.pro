@@ -11,7 +11,9 @@ HEADERS       = mainwindow.h \
     mainwindow.h \
     scribblearea.h \
     scribbleshape.h \
-    sizedialog.h
+    sizedialog.h \
+    textdialog.h \
+    gettextdialog.h
 SOURCES       = main.cpp \
                 mainwindow.cpp \
                 scribblearea.cpp \
@@ -23,7 +25,9 @@ SOURCES       = main.cpp \
     mainwindow.cpp \
     scribblearea.cpp \
     scribbleshape.cpp \
-    sizedialog.cpp
+    sizedialog.cpp \
+    textdialog.cpp \
+    gettextdialog.cpp
 
 # install
 
@@ -33,11 +37,13 @@ FORMS += \
     fillingdialog.ui \
     sizedialog.ui \
     fillingdialog.ui \
-    sizedialog.ui
+    sizedialog.ui \
+    textdialog.ui \
+    gettextdialog.ui
 
 RESOURCES += \
     icon.qrc \
-    icon.qrc
+
 
 DISTFILES += \
     icon/pen.png \
@@ -62,8 +68,13 @@ DISTFILES += \
     icon/rect.png \
     icon/save.png \
     icon/width.png \
+    icon/icons8-ball-point-pen-64.png \
     rect.png \
     save.png
+
+
+SUBDIRS += \
+    scribble.pro
 
 INCLUDEPATH +=  "C:\Program Files (x86)\Tesseract-OCR\include" \
                 "C:\Program Files (x86)\Tesseract-OCR\include\leptonica" \
@@ -81,15 +92,7 @@ LIBS +=  -L"C:\Program Files (x86)\Tesseract-OCR\lib" \
 -llibjpeg8c-static-mtdll-debug  \
 -lgiflib416-static-mtdll-debug  \
 -lliblept168d                   \
--llibtesseract302           \
--llibtesseract302-static    \
--llibtiff394-static-mtdll   \
--lzlib125-static-mtdll      \
--llibpng143-static-mtdll    \
--lliblept168-static-mtdll   \
--llibjpeg8c-static-mtdll    \
--lgiflib416-static-mtdll    \
--lliblept168                \
+
 
 } else : win32:CONFIG(release, debug | release):{
 LIBS +=  -L"C:\Program Files (x86)\Tesseract-OCR\lib" \
@@ -105,5 +108,3 @@ LIBS +=  -L"C:\Program Files (x86)\Tesseract-OCR\lib" \
 
 }
 
-SUBDIRS += \
-    scribble.pro

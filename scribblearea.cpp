@@ -17,6 +17,7 @@
 #include <QMatrix>
 #include <QBrush>
 #include <QGradient>
+#include <QThread>
 #include "scribbleshape.h"
 
 ScribbleArea::ScribbleArea(QWidget *parent)
@@ -27,9 +28,9 @@ ScribbleArea::ScribbleArea(QWidget *parent)
     scribbling = false;
 
     filling = 0;
-    fillbrush = new  QBrush(Qt::SolidPattern);
+    fillbrush.setStyle(Qt::SolidPattern);
 
-    myPenWidth = 1;
+    myPenWidth = 6;
     myPenColor = Qt::blue;
     myPenType = Qt::SolidLine;
     type = ScribbleArea::Pen;
@@ -41,20 +42,21 @@ ScribbleArea::ScribbleArea(QWidget *parent)
     image.fill(bgColor);
     tempImage = image;
     moveTime = 0;
+    textEdit = 0;
     selected = false;
+
 
 
 }
 
 bool ScribbleArea::openImage(const QString &fileName)
-
 {
     QImage loadedImage;
     if (!loadedImage.load(fileName))
         return false;
 
-   // QSize newSize = loadedImage.size().expandedTo(size());
-  // resizeImage(&loadedImage, newSize);
+    QSize newSize = loadedImage.size().expandedTo(size());
+   resizeImage(&loadedImage, newSize);
     image = loadedImage;
     modified = false;
     update();
@@ -84,10 +86,16 @@ void ScribbleArea::setPenWidth(int newWidth)
     myPenWidth = newWidth;
 }
 
+void ScribbleArea::setText(QString t)
+{
+    textEdit = 1;
+    text = t;
+}
 void ScribbleArea::set2bgColor()
 {
     myPenColor = bgColor;
 }
+
 void ScribbleArea::setSize(QSize s)
 {
     setMaximumSize(s.width(), s.height());
@@ -112,14 +120,13 @@ void ScribbleArea::setMovement()
     selected = true;
 
 }
-void ScribbleArea::setFillStyle(int *s, QBrush *brush)
+void ScribbleArea::setFillStyle(int s, QBrush brush)
 {
-     //filling = *s;
-    // fillbrush = *brush;
+     filling = s;
+     fillbrush = brush;
 }
 
 void ScribbleArea::clearImage()
-
 {
     image.fill(bgColor);
     modified = true;
@@ -130,26 +137,39 @@ void ScribbleArea::clearImage()
 
 void ScribbleArea::mousePressEvent(QMouseEvent *event)
 {
+    if(type != ScribbleArea::Fill)
+           filling = 0;
+
+
+
     if(type != Move){
         moveTime = 0;
+        moveStates.clear();
     }
+    if(textEdit > 1)
+           type = ScribbleArea::Pen, textEdit = 0;
     if (event->button() == Qt::LeftButton) {
         lastPoint = event->pos();
 
     }
     if(event->button() == Qt::LeftButton && !shapeSet.empty() && filling)
     {
-        foreach(ScribbleShape i, shapeSet)
+        for(QVector<ScribbleShape>::iterator i = shapeSet.begin(); i != shapeSet.end();)
         {
-            if(i.shapetype == *filling && i.isInside(event->pos()))
+            if(i->shapetype == filling && i->isInside(event->pos()))
             {
                 QPainter painter(&image);
-                painter.fillPath(i.path, *fillbrush);
+                painter.fillPath(i->path, fillbrush);
                 update();
+                QThread::msleep(500);
+                shapeSet.erase(i);
                 break;
             }
+            else i ++;
         }
+
     }
+
 
 }
 
@@ -173,18 +193,14 @@ void ScribbleArea::mouseMoveEvent(QMouseEvent *event)
 
 void ScribbleArea::mouseReleaseEvent(QMouseEvent *event)
 {
-
     scribbling = false;
     endPoint = event->pos();
-    if(type != Pen && !selected && !filling)
+    if(type != Pen && !selected && !filling && !textEdit)
         paint(image);
 
     if(type == Move)
         ++moveTime;
-
-
 }
-
 
 void ScribbleArea::paintEvent(QPaintEvent *event)
 {
@@ -193,10 +209,7 @@ void ScribbleArea::paintEvent(QPaintEvent *event)
             painter.drawImage(0, 0, tempImage);
         else
             painter.drawImage(0, 0, image);
-
 }
-
-
 
 void ScribbleArea::resizeEvent(QResizeEvent *event)
 {
@@ -209,14 +222,15 @@ void ScribbleArea::resizeEvent(QResizeEvent *event)
     QWidget::resizeEvent(event);
 }
 
-
-
 void ScribbleArea::paint(QImage &theImage)
 {
+
     QPainter painter(&theImage);
 
-    if(myPenColor == bgColor)
+    if(type != ScribbleArea::Eraser && myPenColor == bgColor)
         myPenColor = Qt::blue;
+
+    //决定画笔的线性，比如实线还是虚线还是点画线，双点画线
     if(myPenType == Qt::SolidLine)
         state.pen = QPen(myPenColor, myPenWidth, Qt::SolidLine, Qt::RoundCap,
                                           Qt::RoundJoin);
@@ -233,27 +247,42 @@ void ScribbleArea::paint(QImage &theImage)
         state.pen = QPen(myPenColor, myPenWidth, Qt::DashDotDotLine, Qt::RoundCap,
                          Qt::RoundJoin);
 
+
+
     painter.setPen(state.pen);
 
+    //对画线，矩形，椭圆，画笔，移动，文本功能分别做处理，通过type来区分
     switch(type)
     {
-        case ScribbleArea::Line:
-        {
-            painter.drawLine(lastPoint, endPoint);
-            break;
-        }
+
+    case ScribbleArea::Eraser:
+    {
+        set2bgColor();
+        painter.setPen(QPen(myPenColor, myPenWidth, Qt::SolidLine, Qt::RoundCap,Qt::RoundJoin));
+        state.path.moveTo(lastPoint);
+        state.path.lineTo(endPoint);
+        painter.drawPath(state.path);
+        states.push_back(state);
+        state.path= state.path.subtracted(state.path);
+        lastPoint = endPoint;
+        break;
+    }
     case ScribbleArea::Rect:
     {
+        //绘制矩阵
         QPainterPath path;
         QRect rect = QRect(lastPoint.x(), lastPoint.y(), endPoint.x(), endPoint.y());
         path.addRect(rect);
         painter.drawPath(path);
+
+        //如果释放了鼠标，scribbling就是false了，表示画完了。此种情况下，在shapeSet中保存矩阵，为填充功能服务。
         if(scribbling == false)
         {
             QPoint v[4] = {rect.topLeft(), rect.bottomRight(), rect.bottomLeft(), rect.topRight()};
             ScribbleShape temp(ScribbleArea::Rect, v, path);
             shapeSet.push_back(temp);
         }
+        //在states中放入这个QPaintPath，为移动功能服务
         if(scribbling == false)
         {
             state.path = path;
@@ -283,16 +312,21 @@ void ScribbleArea::paint(QImage &theImage)
     }
     case ScribbleArea::Pen:
     {
+        //小段小段的线段
         state.path.moveTo(lastPoint);
         state.path.lineTo(endPoint);
+        //画出来
         painter.drawPath(state.path);
+        //保存路径
         states.push_back(state);
         state.path= state.path.subtracted(state.path);
+        //更新点
         lastPoint = endPoint;
         break;
     }
     case ScribbleArea::Move:
     {
+        //一开始选中移动功能，先画矩阵框
         if(moveTime == 0)
         {
             painter.setPen(Qt::DashLine);
@@ -300,7 +334,8 @@ void ScribbleArea::paint(QImage &theImage)
             pre = lastPoint;
             cur = endPoint;
         }
-        if(moveTime > 1)
+        //画完矩阵框以后，把在矩阵框内的对象存入准备要移动的QVector，就是moveStates。
+        if(moveTime >= 1)
         {
             selected = false;
             for(QVector <State> :: iterator iter = states.begin();iter != states.end();){
@@ -308,9 +343,10 @@ void ScribbleArea::paint(QImage &theImage)
                 {
                     moveStates.push_back(*iter);
                     states.erase(iter);
-                }else{
-                    iter ++;
-                }
+                 }
+                else
+                    iter++;
+
             }
             for(int i = 0;i<moveStates.size();++i){
                 moveStates[i].path.translate(endPoint.x()-lastPoint.x(),endPoint.y()-lastPoint.y());
@@ -322,8 +358,21 @@ void ScribbleArea::paint(QImage &theImage)
         }
         break;
     }
-    }
+    case ScribbleArea::Text:
+    {
+            //打文本
+            QPainter painter(&image);
+            const QRect rectangle = QRect(lastPoint, endPoint);
 
+            painter.setFont(QFont("Times", 15));
+            QPen *pen = new QPen;
+            painter.drawText(rectangle, 0, text);
+
+            update();
+            textEdit ++;
+        break;
+    }
+    }
     foreach (State state, states) {
         painter.setPen(state.pen);
         painter.drawPath(state.path);

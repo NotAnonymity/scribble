@@ -7,7 +7,10 @@ TextDialog::TextDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 }
-
+void TextDialog::showResults(QString s)
+{
+    ui->textEdit->setText(s);
+}
 TextDialog::~TextDialog()
 {
     delete ui;

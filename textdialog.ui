@@ -1,6 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>TextDialog</class>
- <widget name="TextDialog" class="QDialog">
+ <widget class="QDialog" name="TextDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -12,6 +13,29 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
+  <widget class="QTextEdit" name="textEdit">
+   <property name="geometry">
+    <rect>
+     <x>80</x>
+     <y>50</y>
+     <width>281</width>
+     <height>221</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>20</y>
+     <width>131</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>OCR results:</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

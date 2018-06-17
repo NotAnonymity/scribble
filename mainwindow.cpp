@@ -3,10 +3,20 @@
 #include "mainwindow.h"
 #include "scribblearea.h"
 #include "sizedialog.h"
+#include "textdialog.h"
+#include "gettextdialog.h"
+#include "baseapi.h"
+#include "allheaders.h"
 #include <QScrollArea>
+#include <QErrorMessage>
 #include <fillingdialog.h>
+#include <QInputDialog>
 #include <QToolBar>
 #include <QDebug>
+#include <QStringList>
+#include <QString>
+#include <QCursor>
+
 
 MainWindow::MainWindow()
 {
@@ -36,7 +46,10 @@ MainWindow::MainWindow()
 
     setWindowTitle(tr("Scribble"));
     resize(1500, 800);
+    statusBar();
 
+    QCursor *myCursor =new QCursor(QPixmap(":/icon/icons8-ball-point-pen-64.png"),-1,-1);
+    this->setCursor(*myCursor);
 
 
 }
@@ -73,13 +86,15 @@ void MainWindow::setCanvasSize()
     dlg->setWindowIcon(QIcon(":/icon/3.png"));
     dlg->setWidget(scribbleArea);
     dlg->show();
-
 }
 void MainWindow::penColor()
 {
-    QColor newColor = QColorDialog::getColor(scribbleArea->penColor());
+    QColorDialog *cdlg = new QColorDialog();
+    QColor newColor = cdlg->getColor();
     if (newColor.isValid())
         scribbleArea->setPenColor(newColor);
+   // cdlg->close();
+    delete(cdlg);
 }
 
 void MainWindow::penWidth()
@@ -107,9 +122,8 @@ void MainWindow::setbgc()
 }
 void MainWindow::erase()
 {
-    scribbleArea->setShape(ScribbleArea::Pen);
-    scribbleArea->setPenType(Qt::SolidLine);
-    scribbleArea->set2bgColor();
+    scribbleArea->setShape(ScribbleArea::Eraser);
+
 }
 void MainWindow::customDraw()
 {
@@ -123,9 +137,13 @@ void MainWindow::ellipseDraw()
 {
     scribbleArea->setShape(ScribbleArea::Ellipse);
 }
-void MainWindow::lineDraw()
+void MainWindow::textDraw()
 {
-    scribbleArea->setShape(ScribbleArea::Line);
+    scribbleArea->setShape(ScribbleArea::Text);
+    GetTextDialog *gtdlg = new GetTextDialog;
+    gtdlg->setScribble(scribbleArea);
+    gtdlg->show();
+
 }
 void MainWindow::movement()
 {
@@ -133,32 +151,52 @@ void MainWindow::movement()
 }
 void MainWindow::fill()
 {
+    scribbleArea->setShape(ScribbleArea::Fill);
     FillingDialog *fd = new FillingDialog;
     fd->setWindowIcon(QIcon(":/icon/2.png"));
     fd->setWindowTitle("SetFillingPattern");
-  //  fd->linkWith(scribbleArea->filling, scribbleArea->fillbrush);
+    fd->setScribble(scribbleArea);
     fd->show();
+}
+void MainWindow::ocr()
+{
+    //选择要载入的图形文件，返回路径存在fileName里
+    QFileDialog *fdlg = new QFileDialog;
+    QString fileName = fdlg->getOpenFileName(new QMainWindow,
+                               MainWindow::tr("Open File"), QDir::currentPath());
+    if (fileName.isEmpty())
+    {    QErrorMessage *em = new QErrorMessage;
+        em->showMessage("Error: selected file type doesn't fit");}
 
+    //初始化一个TessBaseAPI对象，把fileName传给这个API
+    tesseract::TessBaseAPI tessapi;
+     tessapi.Init(NULL,"eng",tesseract::OEM_DEFAULT);
+     QByteArray ba = fileName.toLatin1();
+     const char * filepath = ba;
+
+     //文件打开失败或者不是图形文件就发出错误警告
+     char * textouttemp;
+     STRING textout;
+     if(!tessapi.ProcessPages(filepath,NULL,0,&textout)){
+         QErrorMessage *em = new QErrorMessage;
+         em->showMessage("Error:");
+         return;
+     }
+
+     //打开显示输出文本的对话框，显示结果
+     TextDialog *tdlg = new TextDialog;
+     tdlg->show();
+     tdlg->showResults(QString(QLatin1String(textout.string())));
 
 }
 void MainWindow::about()
 {
     QMessageBox::about(this, tr("About Scribble"),
-            tr("<p>The <b>Scribble</b> example shows how to use QMainWindow as the "
-               "base widget for an application, and how to reimplement some of "
-               "QWidget's event handlers to receive the events generated for "
-               "the application's widgets:</p><p> We reimplement the mouse event "
-               "handlers to facilitate drawing, the paint event handler to "
-               "update the application and the resize event handler to optimize "
-               "the application's appearance. In addition we reimplement the "
-               "close event handler to intercept the close events before "
-               "terminating the application.</p><p> The example also demonstrates "
-               "how to use QPainter to draw an image in real time, as well as "
-               "to repaint widgets.</p>"));
+            tr("<p>The <b>Scribble</b> can provide basic painting functions.</p>"
+               ));
 }
 
 void MainWindow::createActions()
-
 {
     openAct = new QAction(QIcon(":/icon/open.png"),tr("&Open..."), this);
     openAct->setShortcuts(QKeySequence::Open);
@@ -198,7 +236,7 @@ void MainWindow::createActions()
     exitAct->setShortcuts(QKeySequence::Quit);
     connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
 
-    penColorAct = new QAction(QIcon(":/icon/pencolor.png"),tr("&Pen Color..."), this);
+    penColorAct = new QAction(QIcon(":/icon/painter.png"),tr("&Pen Color..."), this);
     connect(penColorAct, SIGNAL(triggered()), this, SLOT(penColor()));
 
     eraseAct = new QAction(QIcon(":/icon/eraser.png"),tr("&Eraser"), this);
@@ -207,15 +245,15 @@ void MainWindow::createActions()
     penWidthAct = new QAction(QIcon(":/icon/width.png"),tr("Pen &Width / Eraser &Width"), this);
     connect(penWidthAct, SIGNAL(triggered()), this, SLOT(penWidth()));
 
-    setbgcAct = new QAction(tr("Set the color of canvas"), this);
+    setbgcAct = new QAction(QIcon(":/icon/color.png"),tr("Set the color of canvas"), this);
     connect(setbgcAct, SIGNAL(triggered()), this, SLOT(setbgc()));
 
-    clearScreenAct = new QAction(tr("&Clear Screen"), this);
+    clearScreenAct = new QAction(QIcon(":/icon/clearscreen.png"),tr("&Clear Screen"), this);
     clearScreenAct->setShortcut(tr("Ctrl+L"));
     connect(clearScreenAct, SIGNAL(triggered()),
             scribbleArea, SLOT(clearImage()));
 
-    customDrawAct = new QAction(tr("&Use pen"), this);
+    customDrawAct = new QAction(QIcon(":/icon/brush.png"),tr("&Use pen"), this);
     connect(customDrawAct, SIGNAL(triggered()), this, SLOT(customDraw()));
 
     rectDrawAct = new QAction(QIcon(":/icon/rect.png"),tr("&Draw rectangle"), this);
@@ -224,14 +262,17 @@ void MainWindow::createActions()
     ellipseDrawAct = new QAction(QIcon(":/icon/ellipse.png"),tr("&Draw ellipse"), this);
     connect(ellipseDrawAct, SIGNAL(triggered()), this, SLOT(ellipseDraw()));
 
-    lineDrawAct = new QAction(QIcon(":/icon/line.png"),tr("&Draw line"), this);
-    connect(lineDrawAct, SIGNAL(triggered()), this, SLOT(lineDraw()));
+    textDrawAct = new QAction(QIcon(":/icon/text.png"),tr("&Text edit"), this);
+    connect(textDrawAct, SIGNAL(triggered()), this, SLOT(textDraw()));
 
     movementAct = new QAction(QIcon(":/icon/move.png"),tr("&Move the selected area"), this);
     connect(movementAct, SIGNAL(triggered()), this, SLOT(movement()));
 
     fillAct = new QAction(QIcon(":/icon/fill.png"),tr("&Fill the shape"), this);
     connect(fillAct, SIGNAL(triggered()), this, SLOT(fill()));
+
+    ocrAct = new QAction(QIcon(":/icon/ocr.png"),tr("&OCR"), this);
+    connect(ocrAct, SIGNAL(triggered()), this, SLOT(ocr()));
 
     aboutAct = new QAction(QIcon(":/icon/about.png"),tr("&About"), this);
     connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
@@ -269,11 +310,14 @@ void MainWindow::createMenus()
     shapeMenu->addAction(customDrawAct);
     shapeMenu->addAction(rectDrawAct);
     shapeMenu->addAction(ellipseDrawAct);
-    shapeMenu->addAction(lineDrawAct);
+    shapeMenu->addAction(textDrawAct);
+
 
     toolsMenu = new QMenu(tr("&Tools"), this);
     toolsMenu->addAction(movementAct);
     toolsMenu->addAction(fillAct);
+    toolsMenu->addAction(ocrAct);
+
 
     helpMenu = new QMenu(tr("&Help"), this);
     helpMenu->addAction(aboutAct);
@@ -307,16 +351,12 @@ void MainWindow::createToolBars()
     toolbar->addAction(customDrawAct);
     toolbar->addAction(rectDrawAct);
     toolbar->addAction(ellipseDrawAct);
-    toolbar->addAction(lineDrawAct);
-    toolbar->addSeparator();
-
-    toolbar->addAction(customDrawAct);
-    toolbar->addAction(rectDrawAct);
-    toolbar->addAction(lineDrawAct);
+    toolbar->addAction(textDrawAct);
     toolbar->addSeparator();
 
     toolbar->addAction(movementAct);
     toolbar->addAction(fillAct);
+    toolbar->addAction(ocrAct);
     toolbar->addSeparator();
 
     toolbar->addAction(aboutAct);
@@ -324,6 +364,36 @@ void MainWindow::createToolBars()
     this->addToolBar(toolbar);
     toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
 }
+
+void MainWindow::createStatusBar()
+{
+
+    locationLabel = new QLabel(" W999 ");
+    locationLabel->setAlignment(Qt::AlignHCenter);
+    locationLabel->setMinimumSize(locationLabel->sizeHint());
+
+    formulaLabel = new QLabel;
+    formulaLabel->setIndent(3);
+
+    statusBar()->addWidget(locationLabel);
+    statusBar()->addWidget(formulaLabel, 1);
+
+   // connect(spreadsheet, SIGNAL(currentCellChanged(int, int, int, int)), this, SLOT(updateStatusBar()));
+    //connect(spreadsheet, SIGNAL(modified()), this, SLOT(spreadsheetModified()));
+
+
+    updateStatusBar();
+}
+void MainWindow::updateStatusBar()
+{
+    QString s;
+ //   std::cout << QCursor::pos().x() << QCursor::pos().y();
+    s = "x = " + QString(QCursor::pos().x());
+    s += ", y = " + QString(QCursor::pos().y());
+    locationLabel->setText(s);
+    //formulaLabel->setText(spreadsheet->currentFormula());
+}
+
 bool MainWindow::maybeSave()
 {
     if (scribbleArea->isModified()) {

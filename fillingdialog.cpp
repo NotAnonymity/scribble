@@ -3,12 +3,14 @@
 #include "ui_fillingdialog.h"
 #include <QColor>
 #include <QColorDialog>
+#include <QDebug>
 FillingDialog::FillingDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::FillingDialog)
 {
     ui->setupUi(this);
-    opaque = true;
+    index = 2;
+    transparence = 255;
     ui->comboBox->addItem("SolidPattern");
     ui->comboBox->addItem("Dense2Pattern");
     ui->comboBox->addItem("Dense4Pattern");
@@ -17,17 +19,14 @@ FillingDialog::FillingDialog(QWidget *parent) :
     ui->comboBox->addItem("VerPattern");
     ui->comboBox->addItem("CrossPattern");
 
-    connect(ui->RectangleButton, SLOT(click()), this, SIGNAL(fillRect()));
-    connect(ui->EllipseButton, SLOT(click()), this, SIGNAL(fillRect()));
-    connect(ui->comboBox, SLOT(currentIndexChanged(int)), this, SIGNAL(setBrushStyle()));
-    connect(ui->colorButton, SLOT(click()), this, SIGNAL(setColor()));
-    connect(ui->okButton, SLOT(click()), this, SIGNAL(saveSetting()));
+    connect(ui->RectangleButton, SIGNAL(clicked()), this, SLOT(fillRect()));
+    connect(ui->EllipseButton, SIGNAL(clicked()), this, SLOT(fillEllispe()));
+    connect(ui->comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(getIndex()));
+    connect(ui->spinBox, SIGNAL(setValue(int)), this, SLOT(trans()));
+    connect(ui->colorButton, SIGNAL(clicked()), this, SLOT(setColor()));
+    connect(ui->okButton, SIGNAL(clicked()), this, SLOT(saveSetting()));
 }
-void FillingDialog::linkWith(QBrush *b, int *t)
-{
-    brush = b;
-    type = t;
-}
+
 
 FillingDialog::~FillingDialog()
 {
@@ -35,30 +34,68 @@ FillingDialog::~FillingDialog()
 }
 void FillingDialog::fillRect()
 {
-    *type = ScribbleArea::Rect;
+    type = ScribbleArea::Rect;
 }
 
 void FillingDialog::fillEllispe()
 {
-    *type = ScribbleArea::Ellipse;
+    type = ScribbleArea::Ellipse;
+}
+void FillingDialog::getIndex()
+{
+    index = ui->comboBox->currentIndex();
 }
 void FillingDialog::setBrushStyle()
 {
-    int u = ui->comboBox->currentIndex();
-    //brush->setStyle(Qt::SolidPattern + i < 6? (i - 2) * 2 : (i + 3));
+    switch (index) {
+    case 2:
+        brush.setStyle(Qt::SolidPattern);
+        break;
+    case 3:
+        brush.setStyle(Qt::Dense2Pattern);
+        break;
+    case 4:
+        brush.setStyle(Qt::Dense4Pattern);
+        break;
+    case 5:
+        brush.setStyle(Qt::Dense6Pattern);
+        break;
+    case 6:
+        brush.setStyle(Qt::HorPattern);
+        break;
+    case 7:
+        brush.setStyle(Qt::VerPattern);
+        break;
+    case 8:
+        brush.setStyle(Qt::CrossPattern);
+        break;
+    }
+
 }
 void FillingDialog::trans()
 {
-    opaque = false;
+    transparence = ui->spinBox->value();
 }
 
 void FillingDialog::setColor()
 {
-    QColor newColor = QColorDialog::getColor(Qt::black);
+    QColorDialog *cdlg = new QColorDialog;
+    QColor newColor = cdlg->getColor();
     if (newColor.isValid())
-        brush->setColor(newColor);
+     color = newColor;
+    delete(cdlg);
+
+}
+void FillingDialog::setScribble(ScribbleArea *s)
+{
+    scribble = s;
 }
 void FillingDialog::saveSetting()
 {
-
+    qDebug() << type;
+    setBrushStyle();
+    color.setAlpha(transparence);
+    brush.setColor(color);
+    scribble->setFillStyle(type, brush);
+    this->close();
 }

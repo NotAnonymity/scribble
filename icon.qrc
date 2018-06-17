@@ -24,5 +24,10 @@
         <file>icon/1.png</file>
         <file>icon/2.png</file>
         <file>icon/3.png</file>
+        <file>icon/eraser1.png</file>
+        <file>icon/clearscreen.png</file>
+        <file>icon/icons8-ball-point-pen-64.png</file>
+        <file>icon/ocr.png</file>
+        <file>icon/text.png</file>
     </qresource>
 </RCC>

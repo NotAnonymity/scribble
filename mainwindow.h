@@ -5,6 +5,8 @@
 #include <QMainWindow>
 #include <QScrollArea>
 #include <QToolBar>
+#include <QLabel>
+#include <QStatusBar>
 class ScribbleArea;
 
 class MainWindow : public QMainWindow
@@ -28,18 +30,21 @@ private slots:
     void customDraw();
     void rectDraw();
     void ellipseDraw();
-    void lineDraw();
+    void textDraw();
     void erase();
     void movement();
     void fill();
+    void ocr();
     void about();
 
 private:
     void createActions();
     void createMenus();
     void createToolBars();
+    void createStatusBar();
     bool maybeSave();
     bool saveFile(const QByteArray &fileFormat);
+    void updateStatusBar();
 
     ScribbleArea *scribbleArea;
     QScrollArea *scrollArea;
@@ -51,6 +56,9 @@ private:
     QMenu *toolsMenu;
     QMenu *helpMenu;
     QToolBar *toolbar;
+
+    QLabel *locationLabel;
+    QLabel *formulaLabel;
 
     QAction *openAct;
     QList<QAction *> saveAsActs;
@@ -67,9 +75,10 @@ private:
     QAction *customDrawAct;
     QAction *rectDrawAct;
     QAction *ellipseDrawAct;
-    QAction *lineDrawAct;
+    QAction *textDrawAct;
     QAction *movementAct;
     QAction *fillAct;
+    QAction *ocrAct;
     QAction *aboutAct;
 };
 

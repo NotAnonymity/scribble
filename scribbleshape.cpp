@@ -11,5 +11,6 @@ bool ScribbleShape::isInside(QPoint point)
         if(point.x() > vertex[0].x() && point.x() < vertex[1].x() && point.y() < vertex[2].y() && point.y() > vertex[3].y())
             return true;
     }
+
     return false;
 }
