@@ -42,6 +42,8 @@ ScribbleArea::ScribbleArea(QWidget *parent)
     image = QImage(700, 500, QImage::Format_RGB32);
     image.fill(bgColor);
     tempImage = image;
+    canvasWidth = 0;
+    canvasHeight = 0;
     moveTime = 0;
     textEdit = 0;
     selected = false;
@@ -101,7 +103,15 @@ void ScribbleArea::set2bgColor()
 
 void ScribbleArea::setSize(QSize s)
 {
-    setMaximumSize(s.width(), s.height());
+    if(s.width())
+        canvasWidth = 150000/s.width();
+    else
+        canvasWidth = 3000;
+    if(s.height())
+        canvasHeight = 60000/s.height();
+    else
+        canvasWidth = 3000;
+    update();
 }
 void ScribbleArea::setbgColor(const QColor &bgc)
 {
@@ -209,9 +219,9 @@ void ScribbleArea::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
         if(scribbling == true && type != Pen)
-            painter.drawImage(0, 0, tempImage);
+            painter.drawImage(0, 0, tempImage, canvasWidth, canvasHeight);
         else
-            painter.drawImage(0, 0, image);
+            painter.drawImage(0, 0, image, canvasWidth, canvasHeight);
 }
 
 void ScribbleArea::resizeEvent(QResizeEvent *event)

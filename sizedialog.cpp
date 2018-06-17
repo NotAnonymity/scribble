@@ -1,6 +1,6 @@
 #include "sizedialog.h"
 #include "ui_sizedialog.h"
-#include <QDebug>
+
 SizeDialog::SizeDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SizeDialog)
@@ -21,9 +21,7 @@ void SizeDialog::saveSetting()
    savesetting = true;
    width = ui->widthInput->value();
    height = ui->heightInput->value();
-   qDebug() << 1;
    s->setSize(QSize(width, height));
-   qDebug() << 2;
    this->close();
 }
 

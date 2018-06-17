@@ -77,6 +77,8 @@ private:
     int myPenWidth;
     int myPenType;
     int textEdit;
+    int canvasWidth;
+    int canvasHeight;
     ScribbleArea::shape type;
     QColor bgColor;
     QColor myPenColor;
